@@ -2,6 +2,7 @@ package com.arcsoft.xmp_demo;
 
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
+import android.util.Log;
 
 import com.adobe.xmp.XMPException;
 import com.adobe.xmp.XMPMeta;
@@ -24,6 +25,47 @@ public class JpegGenerator {
 
     private JpegGenerator() { }
 
+    static XMPMeta getXmpBuilder(String filename) {
+        XMPMeta xmpMeta = XmpUtil.extractXMPMeta(filename);
+        return xmpMeta;
+    }
+
+    static File write(ExifWriter exifWriter, XmpBuilder builder,byte[] jpeg, File outputFile) throws
+            IOException,
+            ImageReadException,
+            ImageWriteException {
+
+        XMPMeta xmpMeta;
+        try {
+            xmpMeta = builder.build();
+        } catch (XMPException e) {
+            throw new RuntimeException(e);
+        }
+
+        File tempFile = File.createTempFile(TEMP_PREFIX, JPEG_SUFFIX);
+        try {
+            try {
+                FileOutputStream fos = new FileOutputStream(tempFile);
+                fos.write(jpeg);
+                fos.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            boolean ok = XmpUtil.writeXMPMeta(tempFile.getAbsolutePath(), xmpMeta);
+            if(!ok) {
+                Log.d("HJ","writeXMPMeta failed");
+            }
+
+            exifWriter.reWrite(tempFile, outputFile);
+        } finally {
+            if (!tempFile.delete()) {
+                System.out.println(String.format("Failed to delete tempFile %s", tempFile));
+            }
+        }
+
+        return outputFile;
+    }
 
     /**
      * Generates a new Random JPEG File with the given EXIF and XMP and saves it to the given output
@@ -33,7 +75,6 @@ public class JpegGenerator {
             IOException,
             ImageReadException,
             ImageWriteException {
-
 
         int[] image = new int[IMAGE_DIMENSION * IMAGE_DIMENSION];
         Random random = new Random(System.currentTimeMillis());

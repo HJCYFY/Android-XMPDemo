@@ -1,6 +1,8 @@
 package com.arcsoft.xmp_demo;
 
 
+import android.util.Log;
+
 import com.adobe.xmp.XMPException;
 import com.adobe.xmp.XMPMeta;
 import com.adobe.xmp.XMPMetaFactory;
